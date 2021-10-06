@@ -1,3 +1,9 @@
 input[type="number"] {
   width: 3em;
 }
+
+body {
+  background-color: #A3C6FC;
+  font-family: courier;
+  padding: 5em;
+}

@@ -8,7 +8,13 @@ import spark.ExceptionHandler;
 import spark.Request;
 import spark.Response;
 import spark.template.freemarker.FreeMarkerEngine;
+import spark.TemplateViewRoute;
+import spark.ModelAndView;
+import spark.Spark;
+import spark.QueryParamsMap;
 
+import java.util.Map;
+import com.google.common.collect.ImmutableMap;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -114,7 +120,12 @@ public final class Main {
    * * IMPLEMENT METHOD runSparkServer() HERE
    */
   private void runSparkServer(int port) {
-    // TODO
+    Spark.port(port);
+    Spark.externalStaticFileLocation("src/main/resources/static");
+    Spark.exception(Exception.class, new ExceptionPrinter());
+    FreeMarkerEngine freeMarker = createEngine();
+    Spark.get("/autocorrect", new AutocorrectHandler(), freeMarker);
+    Spark.post("/results", new SubmitHandler(), freeMarker);
   }
 
   /**
@@ -141,6 +152,12 @@ public final class Main {
    *  @return ModelAndView to render.
    *  (autocorrect.ftl).
    */
+  private static class AutocorrectHandler implements TemplateViewRoute {
+    public ModelAndView handle(Request req, Response res) {
+      Map<String, String> variables = ImmutableMap.of("title", "CorrectDis", "message", "Check out this great autocorrecting machine", "suggestions", "");
+      return new ModelAndView(variables, "autocorrect.ftl");
+    }
+  }
 
   /**
    *  IMPLEMENT SubmitHandler HERE
@@ -149,5 +166,16 @@ public final class Main {
    *  @return ModelAndView to render.
    *  (autocorrect.ftl).
    */
+  private static class SubmitHandler implements TemplateViewRoute {
+    public ModelAndView handle(Request req, Response res) {
+      QueryParamsMap qm = req.queryMap();
+      String textFromTextField = qm.value("text");
+      Set<String> suggestions = ac.suggest(textFromTextField);
+      // convert Set to string representation
+      String joined = String.join(",", suggestions);
+      Map<String, String> variables = ImmutableMap.of("title", "someTitle", "message", "Check out this great autocorrecting machine","suggestions", joined);
+      return new ModelAndView(variables, "autocorrect.ftl");
+    }
+  }
 
 }
